@@ -43,11 +43,16 @@ function App() {
     if (response.ok) { const { activity } = await response.json(); setActivities([activity, ...activities]); setModal(false); setPage('activity'); setToast('New achievement logged to your feed'); setTimeout(() => setToast(''), 2600) }
   }
   const go = (destination) => { setPage(destination); window.scrollTo({ top: 0, behavior: 'smooth' }) }
+  const logout = () => {
+    localStorage.removeItem('campus-pulse-token')
+    localStorage.removeItem('campus-pulse-user')
+    setUser(null)
+  }
 
   if (!user) return <LoginPage onAuthenticated={setUser} />
 
   return <div className="app-shell">
-    <Topbar query={query} setQuery={setQuery} go={go} openLogger={() => setModal(true)} />
+    <Topbar query={query} setQuery={setQuery} go={go} openLogger={() => setModal(true)} logout={logout} />
     <Sidebar nav={user.role === 'admin' ? [['admin', '⬢', 'Admin Command'], ...nav] : nav} page={page} go={go} />
     <main>{page === 'admin' && user.role === 'admin' && <AdminPanel/>}{page === 'discover' && <Discovery {...{query,setQuery,domain,setDomain,students,go}}/>}{page === 'profile' && <Profile profile={profile} activities={activities} go={go}/>} {page === 'activity' && <Activity activities={activities}/>} {page === 'squads' && <Squads/>}{page === 'guild' && <Guild/>}{page === 'scanner' && <Scanner {...{domain,setDomain,query,setQuery,students}}/>}{page === 'privacy' && <Privacy privacy={privacy} updatePrivacy={updatePrivacy}/>}</main>
     {modal && <ActivityModal close={() => setModal(false)} submit={logActivity}/>} {toast && <div className="toast">✓ {toast}</div>}
