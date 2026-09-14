@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { apiFetch } from '../api.js'
 
 export default function LoginPage({ onAuthenticated }) {
   const [mode, setMode] = useState('login')
@@ -10,7 +11,7 @@ export default function LoginPage({ onAuthenticated }) {
     event.preventDefault()
     setLoading(true); setError('')
     const values = Object.fromEntries(new FormData(event.currentTarget))
-    const response = await fetch(`/api/auth/${mode === 'login' ? 'login' : 'register'}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(values) })
+    const response = await apiFetch(`/api/auth/${mode === 'login' ? 'login' : 'register'}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(values) })
     const data = await response.json().catch(() => ({ error: 'Could not reach the server.' }))
     setLoading(false)
     if (!response.ok) return setError(data.error || 'Something went wrong.')
@@ -21,7 +22,7 @@ export default function LoginPage({ onAuthenticated }) {
 
   const demoLogin = async () => {
     setLoading(true); setError('')
-    const response = await fetch('/api/auth/demo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role }) })
+    const response = await apiFetch('/api/auth/demo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role }) })
     const data = await response.json().catch(() => ({ error: 'Could not reach the server.' }))
     setLoading(false)
     if (!response.ok) return setError(data.error || 'Could not start demo mode.')

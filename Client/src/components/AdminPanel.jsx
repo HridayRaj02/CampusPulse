@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react'
+import { apiFetch } from '../api.js'
 
 export default function AdminPanel() {
   const [events, setEvents] = useState([])
   const [message, setMessage] = useState('')
   const token = localStorage.getItem('campus-pulse-token')
 
-  const load = () => fetch('/api/events').then(r => r.json()).then(data => setEvents(data.events || []))
+  const load = () => apiFetch('/api/events').then(r => r.json()).then(data => setEvents(data.events || []))
   useEffect(() => { load().catch(() => setMessage('Unable to load events.')) }, [])
   const createEvent = async (event) => {
     event.preventDefault()
-    const response = await fetch('/api/events', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(Object.fromEntries(new FormData(event.currentTarget))) })
+    const response = await apiFetch('/api/events', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(Object.fromEntries(new FormData(event.currentTarget))) })
     const data = await response.json()
     if (!response.ok) return setMessage(data.error)
     event.currentTarget.reset(); setEvents([data.event, ...events]); setMessage('Event published to the campus radar.')

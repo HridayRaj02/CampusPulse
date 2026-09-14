@@ -3,6 +3,7 @@ import './index.css'
 import { Sidebar, Topbar } from './components/AppChrome.jsx'
 import LoginPage from './components/LoginPage.jsx'
 import AdminPanel from './components/AdminPanel.jsx'
+import { apiFetch } from './api.js'
 
 const nav = [
   ['discover', '⌁', 'Search & Discovery'], ['profile', '◈', 'Character Sheet'], ['activity', '◫', 'Activity Feed'],
@@ -23,23 +24,32 @@ function App() {
   const [modal, setModal] = useState(false)
   const [toast, setToast] = useState('')
 
-  const load = async () => {
-    const [profileData, activityData, privacyData] = await Promise.all(['/api/profile', '/api/activities', '/api/privacy'].map((url) => fetch(url).then(r => r.json())))
-    setProfile(profileData); setActivities(activityData.activities); setPrivacy(privacyData.privacy)
-  }
-  useEffect(() => { load().catch(() => setToast('Server connection unavailable. Start the API on port 5001.')) }, [])
   useEffect(() => {
-    const timer = setTimeout(() => fetch(`/api/students?q=${encodeURIComponent(query)}&domain=${domain}`).then(r => r.json()).then(d => setStudents(d.students)).catch(() => {}), 180)
+    let active = true
+    const loadDashboard = async () => {
+      try {
+        const [profileData, activityData, privacyData] = await Promise.all(['/api/profile', '/api/activities', '/api/privacy'].map((url) => apiFetch(url).then(r => r.json())))
+        if (!active) return
+        setProfile(profileData); setActivities(activityData.activities); setPrivacy(privacyData.privacy)
+      } catch {
+        if (active) setToast('Server connection unavailable. Check the API deployment.')
+      }
+    }
+    void loadDashboard()
+    return () => { active = false }
+  }, [])
+  useEffect(() => {
+    const timer = setTimeout(() => apiFetch(`/api/students?q=${encodeURIComponent(query)}&domain=${domain}`).then(r => r.json()).then(d => setStudents(d.students)).catch(() => {}), 180)
     return () => clearTimeout(timer)
   }, [query, domain])
   const updatePrivacy = async (change) => {
     const next = { ...privacy, ...change }; setPrivacy(next)
-    await fetch('/api/privacy', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(change) })
+    await apiFetch('/api/privacy', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(change) })
     setToast('Privacy protocol updated'); setTimeout(() => setToast(''), 2200)
   }
   const logActivity = async (event) => {
     event.preventDefault(); const form = new FormData(event.currentTarget)
-    const response = await fetch('/api/activities', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.fromEntries(form)) })
+    const response = await apiFetch('/api/activities', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.fromEntries(form)) })
     if (response.ok) { const { activity } = await response.json(); setActivities([activity, ...activities]); setModal(false); setPage('activity'); setToast('New achievement logged to your feed'); setTimeout(() => setToast(''), 2600) }
   }
   const go = (destination) => { setPage(destination); window.scrollTo({ top: 0, behavior: 'smooth' }) }
